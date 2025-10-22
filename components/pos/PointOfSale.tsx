@@ -3,6 +3,7 @@ import { OrderItem, MenuItem, DispatchType, PaymentMethod } from '../../types';
 import { MenuItemCard } from './MenuItemCard';
 import { PaymentModal } from './PaymentModal';
 import { Icon } from '../shared/Icon';
+import { ItemDetailModal } from './ItemDetailModal';
 
 interface PointOfSaleProps {
   menu: MenuItem[];
@@ -15,6 +16,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ menu, onPlaceOrder }) 
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
   const categories = useMemo(() => {
     if (!selectedDispatchType) return [];
@@ -40,9 +42,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ menu, onPlaceOrder }) 
     return items;
   }, [menu, selectedDispatchType, selectedCategory, searchQuery]);
 
-  const addToOrder = useCallback((item: MenuItem) => {
+  const addSimpleItemToOrder = (item: MenuItem) => {
     setCurrentOrder(prevOrder => {
-      const existingItem = prevOrder.find(orderItem => orderItem.id === item.id);
+      const existingItem = prevOrder.find(orderItem => orderItem.id === item.id && !orderItem.selectedModifiers?.length && !orderItem.notes);
       if (existingItem) {
         return prevOrder.map(orderItem =>
           orderItem.id === item.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
@@ -50,18 +52,37 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ menu, onPlaceOrder }) 
       }
       return [...prevOrder, { ...item, quantity: 1 }];
     });
-  }, []);
+  };
+  
+  const addConfiguredItemToOrder = (item: OrderItem) => {
+    setCurrentOrder(prevOrder => [...prevOrder, item]);
+    setEditingItem(null);
+  };
 
-  const updateQuantity = useCallback((itemId: string, newQuantity: number) => {
+  const handleSelectItem = (item: MenuItem) => {
+    if (item.modifierGroups && item.modifierGroups.length > 0) {
+      setEditingItem(item);
+    } else {
+      addSimpleItemToOrder(item);
+    }
+  };
+
+
+  const updateQuantity = useCallback((itemIndex: number, newQuantity: number) => {
     setCurrentOrder(prevOrder => {
       if (newQuantity <= 0) {
-        return prevOrder.filter(item => item.id !== itemId);
+        return prevOrder.filter((_, index) => index !== itemIndex);
       }
-      return prevOrder.map(item => (item.id === itemId ? { ...item, quantity: newQuantity } : item));
+      return prevOrder.map((item, index) => (index === itemIndex ? { ...item, quantity: newQuantity } : item));
     });
   }, []);
   
-  const subtotal = useMemo(() => currentOrder.reduce((acc, item) => acc + item.price * item.quantity, 0), [currentOrder]);
+  const calculateItemTotal = (item: OrderItem) => {
+    const modifiersTotal = item.selectedModifiers?.reduce((sum, mod) => sum + mod.priceAdjustment, 0) ?? 0;
+    return (item.price + modifiersTotal) * item.quantity;
+  }
+
+  const subtotal = useMemo(() => currentOrder.reduce((acc, item) => acc + calculateItemTotal(item), 0), [currentOrder]);
   const tax = subtotal * 0.08;
   const total = subtotal + tax;
 
@@ -122,6 +143,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ menu, onPlaceOrder }) 
   return (
     <div className="grid grid-cols-12 gap-4 p-4 h-full">
       {isPaymentModalOpen && <PaymentModal total={total} onClose={() => setIsPaymentModalOpen(false)} onPayment={handlePayment} />}
+      {editingItem && <ItemDetailModal item={editingItem} onClose={() => setEditingItem(null)} onAddToCart={addConfiguredItemToOrder} />}
 
       {/* Menu Section */}
       <div className="col-span-12 lg:col-span-7 flex flex-col h-full">
@@ -163,7 +185,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ menu, onPlaceOrder }) 
             {filteredMenu.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredMenu.map(item => (
-                    <MenuItemCard key={item.id} item={item} onSelect={addToOrder} />
+                    <MenuItemCard key={item.id} item={item} onSelect={handleSelectItem} />
                     ))}
                 </div>
             ) : (
@@ -203,18 +225,25 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ menu, onPlaceOrder }) 
                 </div>
             ) : (
                 <ul className="space-y-3">
-                    {currentOrder.map(item => (
-                        <li key={item.id} className="flex items-center space-x-3">
+                    {currentOrder.map((item, index) => (
+                        <li key={`${item.id}-${index}`} className="flex items-center space-x-3">
                             <div className="flex-grow">
                                 <p className="font-semibold">{item.name}</p>
-                                <p className="text-sm text-medium-text">${item.price.toFixed(2)}</p>
+                                {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                                    <ul className="text-xs text-medium-text pl-4 list-disc">
+                                        {item.selectedModifiers.map(mod => (
+                                            <li key={mod.id}>{mod.name} (+${mod.priceAdjustment.toFixed(2)})</li>
+                                        ))}
+                                    </ul>
+                                )}
+                                {item.notes && <p className="text-xs text-brand-primary italic mt-1">Note: {item.notes}</p>}
                             </div>
                             <div className="flex items-center space-x-2 bg-dark-bg rounded-full">
-                                <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="px-3 py-1 rounded-full hover:bg-dark-border">-</button>
+                                <button onClick={() => updateQuantity(index, item.quantity - 1)} className="px-3 py-1 rounded-full hover:bg-dark-border">-</button>
                                 <span className="font-bold w-6 text-center">{item.quantity}</span>
-                                <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="px-3 py-1 rounded-full hover:bg-dark-border">+</button>
+                                <button onClick={() => updateQuantity(index, item.quantity + 1)} className="px-3 py-1 rounded-full hover:bg-dark-border">+</button>
                             </div>
-                            <p className="font-bold w-20 text-right">${(item.price * item.quantity).toFixed(2)}</p>
+                            <p className="font-bold w-20 text-right">${(calculateItemTotal(item)).toFixed(2)}</p>
                         </li>
                     ))}
                 </ul>

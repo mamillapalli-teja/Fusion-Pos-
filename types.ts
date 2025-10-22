@@ -21,6 +21,19 @@ export enum PaymentMethod {
     VOUCHER = 'Voucher'
 }
 
+export interface Modifier {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+}
+
+export interface ModifierGroup {
+  id: string;
+  name: string;
+  selectionType: 'single' | 'multiple';
+  modifiers: Modifier[];
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -28,11 +41,13 @@ export interface MenuItem {
   category: string;
   imageUrl: string;
   availableFor?: DispatchType[];
+  modifierGroups?: ModifierGroup[];
 }
 
 export interface OrderItem extends MenuItem {
   quantity: number;
   notes?: string;
+  selectedModifiers?: Modifier[];
 }
 
 export interface Order {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, DispatchType } from '../../types';
 
@@ -75,13 +74,20 @@ export const KitchenOrderCard: React.FC<KitchenOrderCardProps> = ({ order, onUpd
       </div>
       <div className="p-4 flex-grow overflow-y-auto">
         <ul className="space-y-3">
-          {order.items.map(item => (
-            <li key={`${item.id}-${item.name}`} className="flex justify-between items-start border-b border-dark-border pb-2">
+          {order.items.map((item, index) => (
+            <li key={`${item.id}-${index}`} className="flex justify-between items-start border-b border-dark-border pb-2">
               <div className="flex">
                 <span className="font-bold text-lg mr-3 text-brand-primary">{item.quantity}x</span>
                 <div>
                   <p className="font-semibold text-light-text">{item.name}</p>
-                  {item.notes && <p className="text-sm text-medium-text italic"> - {item.notes}</p>}
+                   {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                    <ul className="text-sm text-medium-text pl-4 list-disc">
+                        {item.selectedModifiers.map(mod => (
+                            <li key={mod.id}>{mod.name}</li>
+                        ))}
+                    </ul>
+                  )}
+                  {item.notes && <p className="text-sm text-brand-primary italic mt-1">"{item.notes}"</p>}
                 </div>
               </div>
             </li>
