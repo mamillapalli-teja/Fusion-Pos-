@@ -4,7 +4,11 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
     <title>FusionPOS - Advanced Restaurant POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,18 +16,18 @@
         theme: {
           extend: {
             colors: {
-              'brand-primary': '#14b8a6', // Teal 500
-              'brand-secondary': '#0f766e', // Teal 700
-              'dark-bg': '#111827', // Gray 900
-              'dark-card': '#1f2937', // Gray 800
-              'dark-border': '#374151', // Gray 700
-              'light-text': '#f3f4f6', // Gray 100
-              'medium-text': '#9ca3af', // Gray 400
-              'dark-text': '#1f2937', // Gray 800
-              'status-new': '#3b82f6', // Blue 500
-              'status-preparing': '#f97316', // Orange 500
-              'status-ready': '#22c55e', // Green 500
-              'status-completed': '#6b7280', // Gray 500
+              'brand-primary': '#14b8a6',
+              'brand-secondary': '#0f766e',
+              'dark-bg': '#111827',
+              'dark-card': '#1f2937',
+              'dark-border': '#374151',
+              'light-text': '#f3f4f6',
+              'medium-text': '#9ca3af',
+              'dark-text': '#1f2937',
+              'status-new': '#3b82f6',
+              'status-preparing': '#f97316',
+              'status-ready': '#22c55e',
+              'status-completed': '#6b7280',
             },
           },
         },
@@ -35,13 +39,14 @@
     "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0"
   }
 }
 </script>
 </head>
-  <body class="bg-dark-bg text-light-text">
-    <div id="root"></div>
+  <body class="bg-dark-bg text-light-text overflow-hidden fixed inset-0">
+    <div id="root" class="h-full w-full"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
